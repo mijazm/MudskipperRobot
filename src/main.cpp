@@ -28,7 +28,8 @@ servo motors work from a guy who knows what he is doing)
 // obnoxious elegance
 #include "webpage.h"
 
-// Calling the library for US100 ultrasonic sensor which I wrote and probable could use some work
+// Calling the library for US100 ultrasonic sensor, which I wrote and probably could use some work,
+// which I am not going to do.
 #include "us100.h"
 
 //Hardware serial pins to be used with US100 ultrasonic sensor
@@ -37,7 +38,7 @@ servo motors work from a guy who knows what he is doing)
 
 //Initialize servo driver object
 // Change the following definitions as per your design and arm poisitions, its a bit of a
-// tril and error, I recommend you control the servos one by one after you have done
+// trial and error, I recommend you control the servos one by one after you have done
 // assembling the fins to get the right values.
 
 #define SERVOMIN_V 20 // This is the angle for down position of \
@@ -82,7 +83,7 @@ int speed = 0;
 
 unsigned long last_time;
 
-// HTML web page
+// HTML web page from the very creatively named "webpage.h"
 const char *index_html = webpage_html;
 
 void notFound(AsyncWebServerRequest *request)
