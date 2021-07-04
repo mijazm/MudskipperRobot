@@ -12,16 +12,18 @@ References:
  ****************************************************/
 #include<Arduino.h>
 #include <Wire.h>
-#include <Adafruit_PWMServoDriver.h>
+// #include <Adafruit_PWMServoDriver.h>
 #include "us100.h"
 
 #ifdef ESP32
 #include <WiFi.h>
 #include <AsyncTCP.h>
+#include <ESP32Servo.h> 
 
 #elif defined(ESP8266)
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
+#include <Servo.h>
 #endif
 
 #include "ESPAsyncWebServer.h"
@@ -33,17 +35,31 @@ References:
 #define TXD2 17
 
 //Initialize servo driver object
-Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+// Change the following definitions as per your design and arm poisition
 
-#define SERVOMIN  350 // This is the 'minimum' pulse length count (out of 4096)
-#define SERVOMAX  500 // This is the 'maximum' pulse length count (out of 4096)
-#define SERVO_FREQ 50 // Analog servos run at ~50 Hz updates
+#define SERVOMIN_V  20// This is the angle for down position of 
+                      // vertical movement servos
+#define SERVOMAX_V  90 // This is the angle for up position of 
+                      // vertical movement servos
+
+#define SERVOMAX_H_R  90// This is the angle for front position of 
+                      // right horizrontal movement servos
+#define SERVOMIN_H_R  0 // This is the angle for back position of 
+                      // right horizrontal movement servos
+
+#define SERVOMAX_H_L  180// This is the angle for front position of 
+                      // left horizrontal movement servos
+#define SERVOMIN_H_L  90 // This is the angle for back position of 
+                      // left horizrontal movement servos
 
 //servo connections to the driver
-int right_h = 0;//right fin horizontal movement servo
-int right_v = 1;//right fin vertical movement servo
-int left_h = 2; //left fin horizontal movement servo
-int left_v = 4; //left fin vertical servo
+uint8_t left_h_pin = 25;//right fin horizontal movement servo
+uint8_t left_v_pin = 26;//right fin vertical movement servo
+uint8_t right_h_pin = 32; //left fin horizontal movement servo
+uint8_t right_v_pin = 33; //left fin vertical servo
+
+//Define the servo object, we need four servos so we will define 4 objects
+Servo right_h,right_v,left_h,left_v;
 
 //Creating US100 Ultrasonic sensor object ( the eyes of mudskipper)
 US100 us100;
@@ -111,10 +127,26 @@ void setup() {
 
   Serial.println("Autonomous Mudskipper Robot has started!");
   
-  //Start the servo driver
-  pwm.begin();
-  pwm.setOscillatorFrequency(27000000);
-  pwm.setPWMFreq(SERVO_FREQ);  // Analog servos run at ~50 Hz updates
+//Initialize the servos
+
+ // Allow allocation of all timers
+ESP32PWM::allocateTimer(0);
+ESP32PWM::allocateTimer(1);
+ESP32PWM::allocateTimer(2);
+ESP32PWM::allocateTimer(3);
+
+  right_h.attach(right_h_pin);
+  right_h.setPeriodHertz(50);    // standard 50 hz servo
+
+  right_v.attach(right_v_pin);
+  right_v.setPeriodHertz(50);    // standard 50 hz servo
+
+  left_h.attach(left_h_pin);
+  left_h.setPeriodHertz(50);    // standard 50 hz servo
+
+  left_v.attach(left_v_pin);
+  left_v.setPeriodHertz(50);    // standard 50 hz servo
+  
 
   delay(10);
   
@@ -229,7 +261,7 @@ boolean move_forward(uint8_t mov_speed){
 This function moves the mudskipper forward by using horizontal and vertical movement 
 of the two servos on each fin, think of how you would paddle with both your arms to move
 forward and then get confused like I did */
-uint16_t plen,plen_right,plen_left;
+uint16_t pos,pos_right,pos_left;
 
 if(mov_speed==0){
   return false;
@@ -239,30 +271,30 @@ if(mov_speed==0){
 int delay_time = map(mov_speed,0,255,2000,500);
 
  //Move the fin from back to front  
-  for ( plen_right = SERVOMAX, plen_left=SERVOMIN; plen_right > SERVOMIN && plen_left<SERVOMAX; plen_right--, plen_left++) {
-    pwm.setPWM(right_h, 0, plen_right);
-    pwm.setPWM(left_h, 0, plen_left);
+  for ( pos_right=SERVOMIN_H_R,pos_left=SERVOMIN_H_L; pos_right<SERVOMAX_H_R && pos_left<SERVOMAX_H_L; pos_right++,pos_left++) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
 // Move fin from up to down
-  for ( plen = SERVOMIN; plen < SERVOMAX; plen++) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+  for ( pos = SERVOMAX_V; pos > SERVOMIN_V; pos--) {
+    right_v.write(pos);
+    left_v.write(pos);
   }
   delay(delay_time);
 
-// Move flipper from front to back
-  for ( plen_right = SERVOMIN, plen_left=SERVOMAX; plen_right < SERVOMAX && plen_left > SERVOMIN; plen_right++, plen_left--) {
-    pwm.setPWM(right_h, 0, plen_right);
-    pwm.setPWM(left_h, 0, plen_left);
+// Move fin from front to back
+  for ( pos_right=SERVOMAX_H_R,pos_left=SERVOMAX_H_L; pos_right>SERVOMIN_H_R && pos_left>SERVOMIN_H_L; pos_right--,pos_left--) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
-// Move flipper from down to up
-  for ( plen = SERVOMAX; plen > SERVOMIN; plen--) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+// Move fin from down to up
+  for ( pos = SERVOMIN_V; pos < SERVOMAX_V; pos++) {
+    right_v.write(pos);
+    left_v.write(pos);
 
   }
   delay(delay_time);
@@ -273,7 +305,7 @@ int delay_time = map(mov_speed,0,255,2000,500);
 
 boolean move_backward(uint8_t mov_speed){
 /* Function for making the mudskipper move backward*/
-uint16_t plen,plen_right,plen_left;
+uint16_t pos,pos_right,pos_left;
 
 if(mov_speed==0){
   return false;
@@ -283,31 +315,31 @@ if(mov_speed==0){
 
 int delay_time = map(mov_speed,0,255,2000,500);
 
-// Move flipper from front to back
-  for (plen_right = SERVOMIN, plen_left=SERVOMAX; plen_right < SERVOMAX && plen_left > SERVOMIN; plen_right++, plen_left--) {
-    pwm.setPWM(right_h, 0, plen_right);
-    pwm.setPWM(left_h, 0, plen_left);
+// Move fin from front to back
+  for (pos_right = SERVOMAX_H_R, pos_left=SERVOMAX_H_L; pos_right > SERVOMIN_H_R && pos_left > SERVOMIN_H_L; pos_right--, pos_left--) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
 // Move fin from up to down
-  for (plen = SERVOMIN; plen < SERVOMAX; plen++) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+  for ( pos = SERVOMAX_V; pos > SERVOMIN_V; pos--) {
+    right_v.write(pos);
+    left_v.write(pos);
   }
   delay(delay_time);
 
  //Move the fin from back to front  
-  for (plen_right = SERVOMAX, plen_left=SERVOMIN; plen_right > SERVOMIN && plen_left<SERVOMAX; plen_right--, plen_left++) {
-    pwm.setPWM(right_h, 0, plen_right);
-    pwm.setPWM(left_h, 0, plen_left);
+  for (pos_right = SERVOMIN_H_R, pos_left=SERVOMIN_H_L; pos_right < SERVOMAX_H_R && pos_left<SERVOMAX_H_L; pos_right++, pos_left++) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
-// Move flipper from down to up
-  for (plen = SERVOMAX; plen > SERVOMIN; plen--) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+// Move fin from down to up
+  for ( pos = SERVOMIN_V; pos < SERVOMAX_V; pos++) {
+    right_v.write(pos);
+    left_v.write(pos);
 
   }
   delay(delay_time);
@@ -326,32 +358,33 @@ if(mov_speed==0){
 //We will use delay between the horizontal and vertical movements to control the speed
 int delay_time = map(mov_speed,0,255,2000,500);
 
-uint16_t plen;
+uint16_t pos,pos_left,pos_right;
 // Move right fin from front to back and left fin from back to front
-  for (plen = SERVOMIN; plen < SERVOMAX; plen++) {
-    pwm.setPWM(right_h, 0, plen);
-    pwm.setPWM(left_h, 0, plen);
+  for (pos_right = SERVOMAX_H_R, pos_left=SERVOMIN_H_L; pos_right > SERVOMIN_H_R && pos_left < SERVOMAX_H_L; pos_right--, pos_left++) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
 // Move fin from up to down
-  for (plen = SERVOMIN; plen < SERVOMAX; plen++) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+  for ( pos = SERVOMAX_V; pos > SERVOMIN_V; pos--) {
+    right_v.write(pos);
+    left_v.write(pos);
   }
   delay(delay_time);
 
 // Move left fin from front to back and right fin from back to front
-  for (plen = SERVOMAX; plen > SERVOMIN; plen--) {
-    pwm.setPWM(right_h, 0, plen);
-    pwm.setPWM(left_h, 0, plen);
+  for (pos_right = SERVOMIN_H_R, pos_left=SERVOMAX_H_L; pos_right < SERVOMAX_H_R && pos_left > SERVOMIN_H_L; pos_right++, pos_left--) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
-// Move flipper from down to up
-  for (plen = SERVOMAX; plen > SERVOMIN; plen--) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+
+// Move fin from down to up
+  for ( pos = SERVOMIN_V; pos < SERVOMAX_V; pos++) {
+    right_v.write(pos);
+    left_v.write(pos);
 
   }
   delay(delay_time);
@@ -362,7 +395,7 @@ uint16_t plen;
 boolean move_right(uint8_t mov_speed){
 
 /* I will barf if I write any more comments than this*/
-uint16_t plen;
+uint16_t pos,pos_left,pos_right;
 
 if(mov_speed==0){
   return false;
@@ -372,38 +405,39 @@ if(mov_speed==0){
 int delay_time = map(speed,0,255,2000,500);
 
 // Move left fin from front to back and right fin from back to front
-  for (plen = SERVOMAX; plen > SERVOMIN; plen--) {
-    pwm.setPWM(right_h, 0, plen);
-    pwm.setPWM(left_h, 0, plen);
+  for (pos_right = SERVOMIN_H_R, pos_left=SERVOMAX_H_L; pos_right < SERVOMAX_H_R && pos_left > SERVOMIN_H_L; pos_right++, pos_left--) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
 // Move fin from up to down
-  for ( plen = SERVOMIN; plen < SERVOMAX; plen++) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+  for ( pos = SERVOMAX_V; pos > SERVOMIN_V; pos--) {
+    right_v.write(pos);
+    left_v.write(pos);
   }
   delay(delay_time);
 
 // Move right fin from front to back and left fin from back to front
-  for ( plen = SERVOMIN; plen < SERVOMAX; plen++) {
-    pwm.setPWM(right_h, 0, plen);
-    pwm.setPWM(left_h, 0, plen);
+  for (pos_right = SERVOMAX_H_R, pos_left=SERVOMIN_H_L; pos_right > SERVOMIN_H_R && pos_left < SERVOMAX_H_L; pos_right--, pos_left++) {
+    right_h.write(pos_right);
+    left_h.write(pos_left);
   }
   delay(delay_time);
 
-// Move flipper from down to up
-  for ( plen = SERVOMAX; plen > SERVOMIN; plen--) {
-    pwm.setPWM(right_v, 0, plen);
-    pwm.setPWM(left_v, 0, plen);
+// Move fin from down to up
+  for ( pos = SERVOMIN_V; pos < SERVOMAX_V; pos++) {
+    right_v.write(pos);
+    left_v.write(pos);
 
   }
   delay(delay_time);
-
   return true;
 }
 
 boolean move_auto(uint8_t mov_speed){
+// This will make the mudskipper wander around like a zombie
+// with a proclivity to take a left turn on nearing an obstacle
   float dist = us100.get_distance();
   Serial.println(distance);
   if (dist >= 50){
