@@ -1,0 +1,9 @@
+# Mudskipper Autonomous Robot
+
+This code implements an autonomous mudskipper robot using ESP32. The robot mimics the unique  
+movement of a mudsskipper fish with the help of 4 servos, two servos for each fin.
+
+To run the code, simply download it and open it in VS code.  
+
+Make sure that you have installed PlatformIO extension on your VS Code.
+
