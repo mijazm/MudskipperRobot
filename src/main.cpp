@@ -41,7 +41,7 @@ servo motors work from a guy who knows what he is doing)
 // trial and error, I recommend you control the servos one by one after you have done
 // assembling the fins to get the right values.
 
-#define SERVOMIN_V 20 // This is the angle for down position of \
+#define SERVOMIN_V 20 // This is the angle for down position of
                       // vertical movement servos
 #define SERVOMAX_V 90 // This is the angle for up position of
                       // vertical movement servos
@@ -57,10 +57,10 @@ servo motors work from a guy who knows what he is doing)
                          // left horizrontal movement servos
 
 //servo pin connections
-uint8_t left_h_pin = 25;  //right fin horizontal movement servo
-uint8_t left_v_pin = 26;  //right fin vertical movement servo
-uint8_t right_h_pin = 32; //left fin horizontal movement servo
-uint8_t right_v_pin = 33; //left fin vertical servo
+uint8_t left_h_pin = 25;  //Left fin horizontal movement servo
+uint8_t left_v_pin = 26;  //Left fin vertical movement servo
+uint8_t right_h_pin = 32; //Right fin horizontal movement servo
+uint8_t right_v_pin = 33; //Right fin vertical servo
 
 //Define the servo object, we need four servos so we will define 4 objects duh
 Servo right_h, right_v, left_h, left_v;
@@ -357,7 +357,7 @@ boolean move_backward(uint8_t mov_speed)
   return true;
 }
 
-boolean move_left(uint8_t mov_speed)
+boolean move_right(uint8_t mov_speed)
 {
 
   /* If you don't know what this function does after reading its name, I can't help you*/
@@ -406,7 +406,7 @@ boolean move_left(uint8_t mov_speed)
   return true;
 }
 
-boolean move_right(uint8_t mov_speed)
+boolean move_left(uint8_t mov_speed)
 {
   /* I will barf if I write any more comments than this*/
 
@@ -462,13 +462,15 @@ boolean move_auto(uint8_t mov_speed)
   // I wrote the code.
   float dist = us100.get_distance();
   Serial.println(distance);
-  if (dist >= 50)
+  if (dist >= 100)
   {
     move_forward(mov_speed);
   }
   else
   {
     move_backward(mov_speed);
+    move_backward(mov_speed);
+    move_left(mov_speed);
     move_left(mov_speed);
   }
 
