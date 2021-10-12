@@ -1,11 +1,16 @@
 # Mudskipper Autonomous Robot
 
 This code implements an autonomous mudskipper robot using ESP32. The robot mimics the unique  
-movement of a mudsskipper fish with the help of 4 servos, two servos for each fin.
+movement of a mudskipper fish with the help of 4 servos, two servos for each fin.
 
 To run the code, simply download it and open it in VS code, install PlatformIO extension
 and let it take care of the libraries and stuff.
 
 Build and upload to your board and marvel at the monstrosity that you have created.
 
+
+The circuit diagram for the project is in the circuit folder, use Fritzing to open the Mudskip.fzz file.
+
+Youtube: https://youtu.be/rX84hADO1c0
+Blog: https://aibegins.net/2021/10/12/mudskipper-robot/  
 
